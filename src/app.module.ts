@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { APP_GUARD, APP_PIPE } from '@nestjs/core';
+import { APP_GUARD, APP_PIPE, APP_INTERCEPTOR } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,6 +14,7 @@ import { ShopModule } from './shop/shop.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { JwtAuthGuard } from './common/guards';
+import { LoggingInterceptor } from './common/interceptors';
 
 @Module({
   imports: [
@@ -24,7 +25,10 @@ import { JwtAuthGuard } from './common/guards';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI', 'mongodb://localhost:27017/challenge_system'),
+        uri: configService.get<string>(
+          'MONGODB_URI',
+          'mongodb://localhost:27017/challenge_system',
+        ),
       }),
       inject: [ConfigService],
     }),
@@ -51,6 +55,10 @@ import { JwtAuthGuard } from './common/guards';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
     },
   ],
 })
