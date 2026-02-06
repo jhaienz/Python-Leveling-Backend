@@ -9,7 +9,9 @@ import { AiModule } from '../ai/ai.module';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Submission.name, schema: SubmissionSchema }]),
+    MongooseModule.forFeature([
+      { name: Submission.name, schema: SubmissionSchema },
+    ]),
     ChallengesModule,
     UsersModule,
     AiModule,

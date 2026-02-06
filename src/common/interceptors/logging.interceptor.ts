@@ -20,7 +20,9 @@ export class LoggingInterceptor implements NestInterceptor {
 
     const { method, url, body, ip } = request;
     const userAgent = request.get('user-agent') || '';
-    const userId = (request as Request & { user?: { _id?: string } }).user?._id || 'anonymous';
+    const userId =
+      (request as Request & { user?: { _id?: string } }).user?._id ||
+      'anonymous';
 
     const now = Date.now();
 
@@ -41,9 +43,7 @@ export class LoggingInterceptor implements NestInterceptor {
           const duration = Date.now() - now;
           const statusCode = response.statusCode;
 
-          this.logger.log(
-            `[${method}] ${url} - ${statusCode} - ${duration}ms`,
-          );
+          this.logger.log(`[${method}] ${url} - ${statusCode} - ${duration}ms`);
         },
         error: (error) => {
           const duration = Date.now() - now;
@@ -58,7 +58,13 @@ export class LoggingInterceptor implements NestInterceptor {
   }
 
   private sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
-    const sensitiveFields = ['password', 'passwordHash', 'token', 'secret', 'apiKey'];
+    const sensitiveFields = [
+      'password',
+      'passwordHash',
+      'token',
+      'secret',
+      'apiKey',
+    ];
     const sanitized = { ...body };
 
     for (const field of sensitiveFields) {

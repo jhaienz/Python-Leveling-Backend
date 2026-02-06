@@ -37,14 +37,15 @@ export class AnnouncementsController {
 
   @Get('admin')
   @Roles(Role.ADMIN)
-  async findAllAdmin(@Query('page') page?: string, @Query('limit') limit?: string) {
+  async findAllAdmin(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     const parsedPage = page ? parseInt(page, 10) : 1;
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
 
-    const { announcements, total } = await this.announcementsService.findAllAdmin(
-      parsedPage,
-      parsedLimit,
-    );
+    const { announcements, total } =
+      await this.announcementsService.findAllAdmin(parsedPage, parsedLimit);
 
     return {
       data: announcements,
@@ -103,7 +104,9 @@ export class AnnouncementsController {
   async togglePin(@Param('id') id: string) {
     const announcement = await this.announcementsService.togglePin(id);
     return {
-      message: announcement.isPinned ? 'Announcement pinned' : 'Announcement unpinned',
+      message: announcement.isPinned
+        ? 'Announcement pinned'
+        : 'Announcement unpinned',
       announcement,
     };
   }

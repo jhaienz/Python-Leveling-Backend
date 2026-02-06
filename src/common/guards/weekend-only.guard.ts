@@ -1,4 +1,9 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -7,7 +12,9 @@ export class WeekendOnlyGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     // Allow bypass in development if configured
-    const bypassWeekend = this.configService.get<string>('BYPASS_WEEKEND_CHECK');
+    const bypassWeekend = this.configService.get<string>(
+      'BYPASS_WEEKEND_CHECK',
+    );
     if (bypassWeekend === 'true') {
       return true;
     }

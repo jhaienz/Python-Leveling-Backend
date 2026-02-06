@@ -39,10 +39,12 @@ export class ChallengesController {
       difficulty: challenge.difficulty,
       baseXpReward: challenge.baseXpReward,
       bonusCoins: challenge.bonusCoins,
-      testCases: challenge.testCases.map((tc) => ({
-        input: tc.input,
-        // Only show first 2 test cases as examples
-      })).slice(0, 2),
+      testCases: challenge.testCases
+        .map((tc) => ({
+          input: tc.input,
+          // Only show first 2 test cases as examples
+        }))
+        .slice(0, 2),
     };
   }
 

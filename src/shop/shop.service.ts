@@ -28,9 +28,7 @@ export class ShopService {
     return item.save();
   }
 
-  async findAllItems(
-    userLevel?: number,
-  ): Promise<ShopItemDocument[]> {
+  async findAllItems(userLevel?: number): Promise<ShopItemDocument[]> {
     const query: Record<string, unknown> = { isActive: true };
 
     if (userLevel !== undefined) {
@@ -47,7 +45,12 @@ export class ShopService {
     const skip = (page - 1) * limit;
 
     const [items, total] = await Promise.all([
-      this.shopItemModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.shopItemModel
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
       this.shopItemModel.countDocuments(),
     ]);
 
@@ -62,7 +65,10 @@ export class ShopService {
     return item;
   }
 
-  async updateItem(id: string, dto: UpdateShopItemDto): Promise<ShopItemDocument> {
+  async updateItem(
+    id: string,
+    dto: UpdateShopItemDto,
+  ): Promise<ShopItemDocument> {
     const item = await this.shopItemModel
       .findByIdAndUpdate(id, dto, { new: true })
       .exec();

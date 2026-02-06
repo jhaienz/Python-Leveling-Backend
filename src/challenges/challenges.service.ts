@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Challenge, ChallengeDocument } from './schemas/challenge.schema';
@@ -7,10 +11,13 @@ import { CreateChallengeDto, UpdateChallengeDto } from './dto';
 @Injectable()
 export class ChallengesService {
   constructor(
-    @InjectModel(Challenge.name) private challengeModel: Model<ChallengeDocument>,
+    @InjectModel(Challenge.name)
+    private challengeModel: Model<ChallengeDocument>,
   ) {}
 
-  async create(createChallengeDto: CreateChallengeDto): Promise<ChallengeDocument> {
+  async create(
+    createChallengeDto: CreateChallengeDto,
+  ): Promise<ChallengeDocument> {
     const existingChallenge = await this.challengeModel.findOne({
       weekNumber: createChallengeDto.weekNumber,
       year: createChallengeDto.year,
@@ -26,7 +33,10 @@ export class ChallengesService {
     return challenge.save();
   }
 
-  async findAll(page = 1, limit = 20): Promise<{ challenges: ChallengeDocument[]; total: number }> {
+  async findAll(
+    page = 1,
+    limit = 20,
+  ): Promise<{ challenges: ChallengeDocument[]; total: number }> {
     const skip = (page - 1) * limit;
 
     const [challenges, total] = await Promise.all([
@@ -60,7 +70,10 @@ export class ChallengesService {
       .exec();
   }
 
-  async update(id: string, updateChallengeDto: UpdateChallengeDto): Promise<ChallengeDocument> {
+  async update(
+    id: string,
+    updateChallengeDto: UpdateChallengeDto,
+  ): Promise<ChallengeDocument> {
     const dto = updateChallengeDto as Partial<CreateChallengeDto>;
     if (dto.weekNumber || dto.year) {
       const existingChallenge = await this.challengeModel.findOne({
@@ -120,7 +133,8 @@ export class ChallengesService {
 
   private getWeekNumber(date: Date): number {
     const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+    const pastDaysOfYear =
+      (date.getTime() - firstDayOfYear.getTime()) / 86400000;
     return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
   }
 }

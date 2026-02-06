@@ -1,7 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { Announcement, AnnouncementDocument } from './schemas/announcement.schema';
+import {
+  Announcement,
+  AnnouncementDocument,
+} from './schemas/announcement.schema';
 import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto';
 
 @Injectable()
@@ -65,7 +68,10 @@ export class AnnouncementsService {
     return announcement;
   }
 
-  async update(id: string, dto: UpdateAnnouncementDto): Promise<AnnouncementDocument> {
+  async update(
+    id: string,
+    dto: UpdateAnnouncementDto,
+  ): Promise<AnnouncementDocument> {
     const updateData: Record<string, unknown> = { ...dto };
 
     // If being published for the first time, set publishedAt

@@ -7,7 +7,7 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Submission, SubmissionDocument } from './schemas/submission.schema';
-import { CreateSubmissionDto } from './dto';
+import { CreateSubmissionDto, ReviewSubmissionDto } from './dto';
 import { ChallengesService } from '../challenges/challenges.service';
 import { UsersService } from '../users/users.service';
 import { AiService } from '../ai/ai.service';
@@ -17,7 +17,8 @@ import { UserDocument } from '../users/schemas/user.schema';
 @Injectable()
 export class SubmissionsService {
   constructor(
-    @InjectModel(Submission.name) private submissionModel: Model<SubmissionDocument>,
+    @InjectModel(Submission.name)
+    private submissionModel: Model<SubmissionDocument>,
     private challengesService: ChallengesService,
     private usersService: UsersService,
     private aiService: AiService,
@@ -27,7 +28,9 @@ export class SubmissionsService {
     createSubmissionDto: CreateSubmissionDto,
     user: UserDocument,
   ): Promise<SubmissionDocument> {
-    const challenge = await this.challengesService.findById(createSubmissionDto.challengeId);
+    const challenge = await this.challengesService.findById(
+      createSubmissionDto.challengeId,
+    );
 
     if (!challenge.isActive) {
       throw new BadRequestException('This challenge is not currently active');
@@ -47,20 +50,26 @@ export class SubmissionsService {
       );
     }
 
-    // Create submission
+    // Create submission with explanation
     const submission = new this.submissionModel({
       userId: user._id,
       challengeId: challenge._id,
       code: createSubmissionDto.code,
+      explanation: createSubmissionDto.explanation,
+      explanationLanguage:
+        createSubmissionDto.explanationLanguage || 'Not specified',
       status: SubmissionStatus.PENDING,
+      isReviewed: false,
     });
 
     await submission.save();
 
     // Process submission asynchronously
-    this.processSubmission(submission._id.toString(), challenge, user).catch((err) => {
-      console.error('Error processing submission:', err);
-    });
+    this.processSubmission(submission._id.toString(), challenge, user).catch(
+      (err) => {
+        console.error('Error processing submission:', err);
+      },
+    );
 
     return submission;
   }
@@ -92,7 +101,9 @@ export class SubmissionsService {
       submission.aiFeedback = result.feedback;
       submission.aiAnalysis = result.analysis;
       submission.aiSuggestions = result.suggestions;
-      submission.status = result.passed ? SubmissionStatus.PASSED : SubmissionStatus.FAILED;
+      submission.status = result.passed
+        ? SubmissionStatus.PASSED
+        : SubmissionStatus.FAILED;
       submission.evaluatedAt = new Date();
 
       // Award XP and coins if passed
@@ -120,7 +131,8 @@ export class SubmissionsService {
       await submission.save();
     } catch (error) {
       submission.status = SubmissionStatus.ERROR;
-      submission.aiFeedback = 'An error occurred during evaluation. Please try again.';
+      submission.aiFeedback =
+        'An error occurred during evaluation. Please try again.';
       await submission.save();
     }
   }
@@ -161,7 +173,9 @@ export class SubmissionsService {
         .limit(limit)
         .populate('challengeId', 'title difficulty')
         .exec(),
-      this.submissionModel.countDocuments({ userId: new Types.ObjectId(userId) }),
+      this.submissionModel.countDocuments({
+        userId: new Types.ObjectId(userId),
+      }),
     ]);
 
     return { submissions, total };
@@ -215,15 +229,20 @@ export class SubmissionsService {
 
     const stats = {
       total: submissions.length,
-      passed: submissions.filter((s) => s.status === SubmissionStatus.PASSED).length,
-      failed: submissions.filter((s) => s.status === SubmissionStatus.FAILED).length,
+      passed: submissions.filter((s) => s.status === SubmissionStatus.PASSED)
+        .length,
+      failed: submissions.filter((s) => s.status === SubmissionStatus.FAILED)
+        .length,
       pending: submissions.filter(
         (s) =>
           s.status === SubmissionStatus.PENDING ||
           s.status === SubmissionStatus.EVALUATING,
       ).length,
       totalXpEarned: submissions.reduce((sum, s) => sum + (s.xpEarned || 0), 0),
-      totalCoinsEarned: submissions.reduce((sum, s) => sum + (s.coinsEarned || 0), 0),
+      totalCoinsEarned: submissions.reduce(
+        (sum, s) => sum + (s.coinsEarned || 0),
+        0,
+      ),
       averageScore:
         submissions.length > 0
           ? Math.round(
@@ -234,5 +253,77 @@ export class SubmissionsService {
     };
 
     return stats;
+  }
+
+  async reviewSubmission(
+    submissionId: string,
+    reviewDto: ReviewSubmissionDto,
+    reviewer: UserDocument,
+  ): Promise<SubmissionDocument> {
+    const submission = await this.submissionModel.findById(submissionId);
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    if (submission.isReviewed) {
+      throw new BadRequestException(
+        'This submission has already been reviewed',
+      );
+    }
+
+    // Update review fields
+    submission.isReviewed = true;
+    submission.reviewedBy = reviewer._id;
+    submission.reviewedAt = new Date();
+    submission.explanationScore = reviewDto.explanationScore;
+    submission.reviewerFeedback = reviewDto.feedback;
+    submission.bonusXpFromReview = reviewDto.bonusXp || 0;
+    submission.bonusCoinsFromReview = reviewDto.bonusCoins || 0;
+
+    // Award bonus XP and coins to the student
+    if (reviewDto.bonusXp && reviewDto.bonusXp > 0) {
+      await this.usersService.addXp(
+        submission.userId.toString(),
+        reviewDto.bonusXp,
+      );
+    }
+
+    if (reviewDto.bonusCoins && reviewDto.bonusCoins > 0) {
+      await this.usersService.addCoins(
+        submission.userId.toString(),
+        reviewDto.bonusCoins,
+      );
+    }
+
+    await submission.save();
+
+    return submission;
+  }
+
+  async findPendingReviews(
+    page = 1,
+    limit = 20,
+  ): Promise<{ submissions: SubmissionDocument[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    const query = {
+      isReviewed: false,
+      status: { $in: [SubmissionStatus.PASSED, SubmissionStatus.FAILED] },
+    };
+
+    const [submissions, total] = await Promise.all([
+      this.submissionModel
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('userId', 'name studentId')
+        .populate('challengeId', 'title difficulty')
+        .exec(),
+      this.submissionModel.countDocuments(query),
+    ]);
+
+    return { submissions, total };
   }
 }

@@ -6,7 +6,9 @@ import { Challenge, ChallengeSchema } from './schemas/challenge.schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Challenge.name, schema: ChallengeSchema }]),
+    MongooseModule.forFeature([
+      { name: Challenge.name, schema: ChallengeSchema },
+    ]),
   ],
   controllers: [ChallengesController],
   providers: [ChallengesService],

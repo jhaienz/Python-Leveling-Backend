@@ -28,7 +28,9 @@ export class UsersController {
   @Get('leaderboard')
   async getLeaderboard(@Query('limit') limit?: string) {
     const parsedLimit = limit ? parseInt(limit, 10) : 10;
-    const users = await this.usersService.getLeaderboard(Math.min(parsedLimit, 100));
+    const users = await this.usersService.getLeaderboard(
+      Math.min(parsedLimit, 100),
+    );
 
     return users.map((user, index) => ({
       rank: index + 1,
@@ -45,7 +47,10 @@ export class UsersController {
     const parsedPage = page ? parseInt(page, 10) : 1;
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
 
-    const { users, total } = await this.usersService.findAll(parsedPage, parsedLimit);
+    const { users, total } = await this.usersService.findAll(
+      parsedPage,
+      parsedLimit,
+    );
 
     return {
       data: users,

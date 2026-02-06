@@ -318,9 +318,13 @@ POST /submissions
 ```json
 {
   "challengeId": "507f1f77bcf86cd799439011",
-  "code": "def fizzbuzz(n):\n    if n % 15 == 0:\n        return 'FizzBuzz'\n    ..."
+  "code": "def fizzbuzz(n):\n    if n % 15 == 0:\n        return 'FizzBuzz'\n    ...",
+  "explanation": "Ang code na ini nagche-check kun ang numero divisible sa 15, 3, o 5. Kung divisible sa 15, nagbabalik siya nin 'FizzBuzz'. Kung sa 3 sana, 'Fizz'. Kung sa 5 sana, 'Buzz'. Kung dae, ibabalik na sana ang numero.",
+  "explanationLanguage": "Bicol"
 }
 ```
+
+> **Note:** `explanation` is required (min 50 characters). Students must explain their code in their native language (e.g., Bicol, Tagalog, Cebuano) to demonstrate understanding.
 
 **Response:** `201 Created`
 ```json
@@ -348,6 +352,10 @@ GET /submissions?page=1&limit=20
       "aiScore": 85,
       "xpEarned": 180,
       "coinsEarned": 24,
+      "isReviewed": true,
+      "explanationScore": 90,
+      "bonusXpFromReview": 50,
+      "bonusCoinsFromReview": 10,
       "createdAt": "2026-02-01T10:30:00Z"
     }
   ],
@@ -366,6 +374,8 @@ GET /submissions/:id
 {
   "id": "507f1f77bcf86cd799439012",
   "code": "def fizzbuzz(n):...",
+  "explanation": "Ang code na ini nagche-check kun ang numero divisible sa 15, 3, o 5...",
+  "explanationLanguage": "Bicol",
   "status": "PASSED",
   "aiScore": 85,
   "aiFeedback": "Good solution! Consider using a dictionary for cleaner code.",
@@ -381,6 +391,12 @@ GET /submissions/:id
   ],
   "xpEarned": 180,
   "coinsEarned": 24,
+  "isReviewed": true,
+  "reviewedAt": "2026-02-01T14:00:00Z",
+  "explanationScore": 90,
+  "reviewerFeedback": "Magayon an explanation! Klaro na naintindihan mo an logic.",
+  "bonusXpFromReview": 50,
+  "bonusCoinsFromReview": 10,
   "createdAt": "2026-02-01T10:30:00Z",
   "evaluatedAt": "2026-02-01T10:30:15Z"
 }
@@ -409,6 +425,76 @@ GET /submissions/stats
 
 ```http
 GET /submissions/challenge/:challengeId?page=1&limit=20
+```
+
+### Get Pending Reviews (Admin)
+
+```http
+GET /submissions/pending-reviews?page=1&limit=20
+```
+
+Returns submissions that have been evaluated by AI but not yet reviewed by an admin.
+
+**Response:** `200 OK`
+```json
+{
+  "data": [
+    {
+      "id": "507f1f77bcf86cd799439012",
+      "userId": { "name": "Juan Dela Cruz", "studentId": "STU123456" },
+      "challengeId": { "title": "FizzBuzz", "difficulty": 2 },
+      "code": "def fizzbuzz(n):...",
+      "explanation": "Ang code na ini nagche-check kun ang numero divisible sa 15, 3, o 5...",
+      "explanationLanguage": "Bicol",
+      "status": "PASSED",
+      "aiScore": 85,
+      "aiFeedback": "Good solution!",
+      "createdAt": "2026-02-01T10:30:00Z"
+    }
+  ],
+  "meta": { "page": 1, "limit": 20, "total": 5, "totalPages": 1 }
+}
+```
+
+### Review Submission (Admin)
+
+```http
+POST /submissions/:id/review
+```
+
+Review a student's code explanation and grant bonus XP/coins based on their understanding.
+
+**Body:**
+```json
+{
+  "explanationScore": 90,
+  "bonusXp": 50,
+  "bonusCoins": 10,
+  "feedback": "Magayon an explanation! Klaro na naintindihan mo an logic."
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `explanationScore` | int | Yes | Score for the explanation (0-100) |
+| `bonusXp` | int | No | Additional XP to grant (0-500) |
+| `bonusCoins` | int | No | Additional coins to grant (0-100) |
+| `feedback` | string | No | Feedback to the student (max 1000 chars) |
+
+**Response:** `200 OK`
+```json
+{
+  "message": "Submission reviewed successfully",
+  "submission": {
+    "id": "507f1f77bcf86cd799439012",
+    "isReviewed": true,
+    "explanationScore": 90,
+    "reviewerFeedback": "Magayon an explanation! Klaro na naintindihan mo an logic.",
+    "bonusXpFromReview": 50,
+    "bonusCoinsFromReview": 10,
+    "reviewedAt": "2026-02-01T14:00:00Z"
+  }
+}
 ```
 
 ---

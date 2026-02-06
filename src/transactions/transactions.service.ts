@@ -49,7 +49,9 @@ export class TransactionsService {
         .skip(skip)
         .limit(limit)
         .exec(),
-      this.transactionModel.countDocuments({ userId: new Types.ObjectId(userId) }),
+      this.transactionModel.countDocuments({
+        userId: new Types.ObjectId(userId),
+      }),
     ]);
 
     return { transactions, total };

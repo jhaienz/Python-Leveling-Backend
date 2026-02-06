@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcrypt';
@@ -37,11 +41,19 @@ export class UsersService {
     return user.save();
   }
 
-  async findAll(page = 1, limit = 20): Promise<{ users: UserDocument[]; total: number }> {
+  async findAll(
+    page = 1,
+    limit = 20,
+  ): Promise<{ users: UserDocument[]; total: number }> {
     const skip = (page - 1) * limit;
 
     const [users, total] = await Promise.all([
-      this.userModel.find().sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+      this.userModel
+        .find()
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .exec(),
       this.userModel.countDocuments(),
     ]);
 
@@ -60,7 +72,10 @@ export class UsersService {
     return this.userModel.findOne({ studentId }).exec();
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<UserDocument> {
+  async update(
+    id: string,
+    updateUserDto: UpdateUserDto,
+  ): Promise<UserDocument> {
     const user = await this.userModel
       .findByIdAndUpdate(id, updateUserDto, { new: true })
       .exec();
@@ -73,10 +88,15 @@ export class UsersService {
   }
 
   async updateLastLogin(id: string): Promise<void> {
-    await this.userModel.findByIdAndUpdate(id, { lastLoginAt: new Date() }).exec();
+    await this.userModel
+      .findByIdAndUpdate(id, { lastLoginAt: new Date() })
+      .exec();
   }
 
-  async addXp(userId: string, xpAmount: number): Promise<{ user: UserDocument; levelsGained: number[] }> {
+  async addXp(
+    userId: string,
+    xpAmount: number,
+  ): Promise<{ user: UserDocument; levelsGained: number[] }> {
     const user = await this.findById(userId);
 
     let newXp = user.xp + xpAmount;

@@ -17,7 +17,10 @@ export class AuthService {
     return this.generateAuthResponse(user);
   }
 
-  async validateUser(studentId: string, password: string): Promise<UserDocument | null> {
+  async validateUser(
+    studentId: string,
+    password: string,
+  ): Promise<UserDocument | null> {
     const user = await this.usersService.findByStudentId(studentId);
 
     if (!user) {

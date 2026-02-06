@@ -45,7 +45,9 @@ export class AiService {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
 
     if (!apiKey) {
-      this.logger.warn('OPENAI_API_KEY not configured - AI evaluation will be mocked');
+      this.logger.warn(
+        'OPENAI_API_KEY not configured - AI evaluation will be mocked',
+      );
     } else {
       this.openai = new OpenAI({ apiKey });
     }
@@ -53,7 +55,9 @@ export class AiService {
     this.model = this.configService.get<string>('OPENAI_MODEL', 'gpt-4');
   }
 
-  async evaluateCode(request: CodeEvaluationRequest): Promise<CodeEvaluationResult> {
+  async evaluateCode(
+    request: CodeEvaluationRequest,
+  ): Promise<CodeEvaluationResult> {
     // Validate and sanitize code
     const validationResult = this.validateCode(request.code);
     if (!validationResult.valid) {
@@ -89,11 +93,16 @@ export class AiService {
       return this.parseAiResponse(responseText, request.testCases);
     } catch (error) {
       this.logger.error(`AI evaluation failed: ${error}`);
-      return this.createErrorResult('AI evaluation temporarily unavailable. Please try again later.');
+      return this.createErrorResult(
+        'AI evaluation temporarily unavailable. Please try again later.',
+      );
     }
   }
 
-  private buildUserPrompt(code: string, request: CodeEvaluationRequest): string {
+  private buildUserPrompt(
+    code: string,
+    request: CodeEvaluationRequest,
+  ): string {
     return `
 ## Problem Statement
 ${request.problemStatement}
@@ -134,9 +143,9 @@ Please evaluate this code and respond with the JSON format specified.`;
 
       const overallScore = Math.round(
         analysis.correctness * 0.5 +
-        analysis.codeQuality * 0.2 +
-        analysis.efficiency * 0.2 +
-        analysis.style * 0.1,
+          analysis.codeQuality * 0.2 +
+          analysis.efficiency * 0.2 +
+          analysis.style * 0.1,
       );
 
       const testResults: TestResult[] = (parsed.testResults || []).map(
@@ -173,7 +182,14 @@ Please evaluate this code and respond with the JSON format specified.`;
     }
 
     // Check for dangerous imports
-    const dangerousImports = ['os', 'subprocess', 'sys', 'socket', 'requests', 'urllib'];
+    const dangerousImports = [
+      'os',
+      'subprocess',
+      'sys',
+      'socket',
+      'requests',
+      'urllib',
+    ];
     for (const imp of dangerousImports) {
       if (new RegExp(`import\\s+${imp}|from\\s+${imp}`, 'i').test(code)) {
         errors.push(`Import of '${imp}' is not allowed for security reasons`);
@@ -225,7 +241,8 @@ Please evaluate this code and respond with the JSON format specified.`;
     return {
       score: 75,
       passed: true,
-      feedback: 'This is a mock evaluation. Configure OPENAI_API_KEY for real AI evaluation.',
+      feedback:
+        'This is a mock evaluation. Configure OPENAI_API_KEY for real AI evaluation.',
       analysis: { correctness: 80, codeQuality: 70, efficiency: 75, style: 70 },
       suggestions: ['Configure OpenAI API key for detailed feedback'],
       testResults: [],

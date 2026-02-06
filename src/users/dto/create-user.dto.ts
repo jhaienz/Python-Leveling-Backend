@@ -1,4 +1,12 @@
-import { IsString, IsNotEmpty, MinLength, MaxLength, Matches, IsOptional, IsEmail } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsOptional,
+  IsEmail,
+} from 'class-validator';
 
 export class CreateUserDto {
   @IsString()
@@ -17,7 +25,8 @@ export class CreateUserDto {
   @MinLength(8)
   @MaxLength(50)
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, {
-    message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
+    message:
+      'Password must contain at least one uppercase letter, one lowercase letter, and one number',
   })
   password: string;
 

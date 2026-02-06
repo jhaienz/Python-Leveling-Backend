@@ -1,4 +1,10 @@
-import { IsNumber, IsPositive, IsString, IsOptional, MaxLength } from 'class-validator';
+import {
+  IsNumber,
+  IsPositive,
+  IsString,
+  IsOptional,
+  MaxLength,
+} from 'class-validator';
 
 export class GrantCoinsDto {
   @IsNumber()

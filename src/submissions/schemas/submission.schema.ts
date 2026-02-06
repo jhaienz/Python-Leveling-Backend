@@ -45,6 +45,35 @@ export class Submission {
   @Prop()
   evaluatedAt?: Date;
 
+  // Student's explanation of their code (in native language like Bicol)
+  @Prop({ required: true })
+  explanation: string;
+
+  @Prop()
+  explanationLanguage?: string; // e.g., "Bicol", "Tagalog", "Cebuano", "English"
+
+  // Manual review by admin/reviewer
+  @Prop({ default: false })
+  isReviewed: boolean;
+
+  @Prop({ type: Types.ObjectId, ref: 'User' })
+  reviewedBy?: Types.ObjectId;
+
+  @Prop()
+  reviewedAt?: Date;
+
+  @Prop()
+  reviewerFeedback?: string;
+
+  @Prop({ min: 0, max: 100 })
+  explanationScore?: number; // Reviewer's score for the explanation (0-100)
+
+  @Prop()
+  bonusXpFromReview?: number; // Additional XP granted by reviewer
+
+  @Prop()
+  bonusCoinsFromReview?: number; // Additional coins granted by reviewer
+
   createdAt: Date;
   updatedAt: Date;
 }
