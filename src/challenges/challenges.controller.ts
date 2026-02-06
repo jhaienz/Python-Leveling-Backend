@@ -24,13 +24,13 @@ export class ChallengesController {
   @Get('current')
   @UseGuards(WeekendOnlyGuard)
   async getCurrentChallenge() {
-    const challenge = await this.challengesService.findCurrentWeekChallenge();
+    const challenges = await this.challengesService.findCurrentWeekChallenges();
 
-    if (!challenge) {
-      throw new NotFoundException('No active challenge for this week');
+    if (!challenges.length) {
+      throw new NotFoundException('No active challenges for this week');
     }
 
-    return {
+    return challenges.map((challenge) => ({
       id: challenge._id,
       title: challenge.title,
       description: challenge.description,
@@ -45,7 +45,7 @@ export class ChallengesController {
           // Only show first 2 test cases as examples
         }))
         .slice(0, 2),
-    };
+    }));
   }
 
   @Get()

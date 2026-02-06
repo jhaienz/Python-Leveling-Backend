@@ -6,6 +6,7 @@ import { Submission, SubmissionSchema } from './schemas/submission.schema';
 import { ChallengesModule } from '../challenges/challenges.module';
 import { UsersModule } from '../users/users.module';
 import { AiModule } from '../ai/ai.module';
+import { WeekendOnlyGuard } from '../common/guards';
 
 @Module({
   imports: [
@@ -17,7 +18,7 @@ import { AiModule } from '../ai/ai.module';
     AiModule,
   ],
   controllers: [SubmissionsController],
-  providers: [SubmissionsService],
+  providers: [SubmissionsService, WeekendOnlyGuard],
   exports: [SubmissionsService],
 })
 export class SubmissionsModule {}

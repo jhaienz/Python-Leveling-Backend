@@ -80,6 +80,40 @@ export class SubmissionsController {
     return this.submissionsService.getSubmissionStats(user._id.toString());
   }
 
+  @Get('pending-reviews')
+  @Roles(Role.ADMIN)
+  async findPendingReviews(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const parsedPage = page ? parseInt(page, 10) : 1;
+    const parsedLimit = limit ? parseInt(limit, 10) : 20;
+
+    const { submissions, total } =
+      await this.submissionsService.findPendingReviews(parsedPage, parsedLimit);
+
+    return {
+      data: submissions.map((s) => ({
+        id: s._id,
+        userId: s.userId,
+        challengeId: s.challengeId,
+        code: s.code,
+        explanation: s.explanation,
+        explanationLanguage: s.explanationLanguage,
+        status: s.status,
+        aiScore: s.aiScore,
+        aiFeedback: s.aiFeedback,
+        createdAt: s.createdAt,
+      })),
+      meta: {
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit),
+      },
+    };
+  }
+
   @Get('challenge/:challengeId')
   @Roles(Role.ADMIN)
   async findByChallenge(
@@ -138,40 +172,6 @@ export class SubmissionsController {
       bonusCoinsFromReview: submission.bonusCoinsFromReview,
       createdAt: submission.createdAt,
       evaluatedAt: submission.evaluatedAt,
-    };
-  }
-
-  @Get('pending-reviews')
-  @Roles(Role.ADMIN)
-  async findPendingReviews(
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    const parsedPage = page ? parseInt(page, 10) : 1;
-    const parsedLimit = limit ? parseInt(limit, 10) : 20;
-
-    const { submissions, total } =
-      await this.submissionsService.findPendingReviews(parsedPage, parsedLimit);
-
-    return {
-      data: submissions.map((s) => ({
-        id: s._id,
-        userId: s.userId,
-        challengeId: s.challengeId,
-        code: s.code,
-        explanation: s.explanation,
-        explanationLanguage: s.explanationLanguage,
-        status: s.status,
-        aiScore: s.aiScore,
-        aiFeedback: s.aiFeedback,
-        createdAt: s.createdAt,
-      })),
-      meta: {
-        page: parsedPage,
-        limit: parsedLimit,
-        total,
-        totalPages: Math.ceil(total / parsedLimit),
-      },
     };
   }
 
