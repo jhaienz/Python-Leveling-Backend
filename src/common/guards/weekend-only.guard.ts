@@ -12,10 +12,10 @@ export class WeekendOnlyGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     // Allow bypass in development if configured
-    const bypassWeekend = this.configService.get<string>(
+    const bypassWeekend = this.configService.get<string | boolean>(
       'BYPASS_WEEKEND_CHECK',
     );
-    if (bypassWeekend === 'true') {
+    if (this.isTruthy(bypassWeekend)) {
       return true;
     }
 
@@ -31,5 +31,15 @@ export class WeekendOnlyGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private isTruthy(value: string | boolean | undefined): boolean {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value !== 'string') {
+      return false;
+    }
+    return ['true', '1', 'yes', 'y', 'on'].includes(value.trim().toLowerCase());
   }
 }

@@ -52,7 +52,7 @@ export class Challenge {
 
 export const ChallengeSchema = SchemaFactory.createForClass(Challenge);
 
-ChallengeSchema.index({ weekNumber: 1, year: 1 }, { unique: true });
+ChallengeSchema.index({ weekNumber: 1, year: 1 });
 ChallengeSchema.index({ isActive: 1 });
 
 ChallengeSchema.virtual('id').get(function () {

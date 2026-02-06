@@ -18,14 +18,14 @@ export class ChallengesService {
   async create(
     createChallengeDto: CreateChallengeDto,
   ): Promise<ChallengeDocument> {
-    const existingChallenge = await this.challengeModel.findOne({
+    const existingCount = await this.challengeModel.countDocuments({
       weekNumber: createChallengeDto.weekNumber,
       year: createChallengeDto.year,
     });
 
-    if (existingChallenge) {
+    if (existingCount >= 10) {
       throw new ConflictException(
-        `A challenge already exists for week ${createChallengeDto.weekNumber} of ${createChallengeDto.year}`,
+        `A maximum of 10 challenges is allowed for week ${createChallengeDto.weekNumber} of ${createChallengeDto.year}`,
       );
     }
 
@@ -60,13 +60,14 @@ export class ChallengesService {
     return challenge;
   }
 
-  async findCurrentWeekChallenge(): Promise<ChallengeDocument | null> {
+  async findCurrentWeekChallenges(): Promise<ChallengeDocument[]> {
     const now = new Date();
     const year = now.getFullYear();
     const weekNumber = this.getWeekNumber(now);
 
     return this.challengeModel
-      .findOne({ weekNumber, year, isActive: true })
+      .find({ weekNumber, year, isActive: true })
+      .sort({ createdAt: -1 })
       .exec();
   }
 
@@ -76,15 +77,15 @@ export class ChallengesService {
   ): Promise<ChallengeDocument> {
     const dto = updateChallengeDto as Partial<CreateChallengeDto>;
     if (dto.weekNumber || dto.year) {
-      const existingChallenge = await this.challengeModel.findOne({
+      const existingCount = await this.challengeModel.countDocuments({
         weekNumber: dto.weekNumber,
         year: dto.year,
         _id: { $ne: id },
       });
 
-      if (existingChallenge) {
+      if (existingCount >= 10) {
         throw new ConflictException(
-          `A challenge already exists for week ${dto.weekNumber} of ${dto.year}`,
+          `A maximum of 10 challenges is allowed for week ${dto.weekNumber} of ${dto.year}`,
         );
       }
     }
