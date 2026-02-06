@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
 import {
   CodeEvaluationRequest,
   CodeEvaluationResult,
@@ -38,21 +37,22 @@ IMPORTANT: Respond ONLY with the JSON object, no additional text.`;
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  private openai: OpenAI;
-  private model: string;
+  private ollamaUrl: string;
+  private ollamaModel: string;
 
   constructor(private configService: ConfigService) {
-    const apiKey = this.configService.get<string>('OPENAI_API_KEY');
+    this.ollamaUrl = this.configService.get<string>(
+      'OLLAMA_URL',
+      'http://localhost:11434',
+    );
+    this.ollamaModel = this.configService.get<string>(
+      'OLLAMA_MODEL',
+      'llama3.2',
+    );
 
-    if (!apiKey) {
-      this.logger.warn(
-        'OPENAI_API_KEY not configured - AI evaluation will be mocked',
-      );
-    } else {
-      this.openai = new OpenAI({ apiKey });
-    }
-
-    this.model = this.configService.get<string>('OPENAI_MODEL', 'gpt-4');
+    this.logger.log(
+      `Ollama configured at ${this.ollamaUrl} with model ${this.ollamaModel}`,
+    );
   }
 
   async evaluateCode(
@@ -66,35 +66,40 @@ export class AiService {
 
     const sanitizedCode = this.sanitizeCode(request.code);
 
-    // If OpenAI is not configured, return mock result
-    if (!this.openai) {
-      return this.createMockResult();
-    }
-
     try {
       const userPrompt = this.buildUserPrompt(sanitizedCode, request);
 
-      const completion = await this.openai.chat.completions.create({
-        model: this.model,
-        messages: [
-          { role: 'system', content: EVALUATION_SYSTEM_PROMPT },
-          { role: 'user', content: userPrompt },
-        ],
-        temperature: 0.3,
-        max_tokens: 2000,
+      const response = await fetch(`${this.ollamaUrl}/api/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: this.ollamaModel,
+          prompt: `${EVALUATION_SYSTEM_PROMPT}\n\n${userPrompt}`,
+          stream: false,
+          options: {
+            temperature: 0.3,
+          },
+        }),
       });
 
-      const responseText = completion.choices[0]?.message?.content;
+      if (!response.ok) {
+        throw new Error(`Ollama API error: ${response.status}`);
+      }
+
+      const data = (await response.json()) as { response?: string };
+      const responseText = data.response;
 
       if (!responseText) {
-        throw new Error('Empty response from OpenAI');
+        throw new Error('Empty response from Ollama');
       }
 
       return this.parseAiResponse(responseText, request.testCases);
     } catch (error) {
       this.logger.error(`AI evaluation failed: ${error}`);
       return this.createErrorResult(
-        'AI evaluation temporarily unavailable. Please try again later.',
+        'AI evaluation failed. Please ensure Ollama is running and try again.',
       );
     }
   }
@@ -233,18 +238,6 @@ Please evaluate this code and respond with the JSON format specified.`;
       feedback: message,
       analysis: { correctness: 0, codeQuality: 0, efficiency: 0, style: 0 },
       suggestions: [],
-      testResults: [],
-    };
-  }
-
-  private createMockResult(): CodeEvaluationResult {
-    return {
-      score: 75,
-      passed: true,
-      feedback:
-        'This is a mock evaluation. Configure OPENAI_API_KEY for real AI evaluation.',
-      analysis: { correctness: 80, codeQuality: 70, efficiency: 75, style: 70 },
-      suggestions: ['Configure OpenAI API key for detailed feedback'],
       testResults: [],
     };
   }

@@ -33,7 +33,7 @@ export class SubmissionsController {
     return {
       id: submission._id,
       status: submission.status,
-      message: 'Submission received. Evaluation in progress...',
+      message: 'Submission received. Waiting for admin to analyze.',
     };
   }
 
@@ -78,6 +78,38 @@ export class SubmissionsController {
   @Get('stats')
   async getStats(@CurrentUser() user: UserDocument) {
     return this.submissionsService.getSubmissionStats(user._id.toString());
+  }
+
+  @Get('pending-analysis')
+  @Roles(Role.ADMIN)
+  async findPendingAnalysis(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const parsedPage = page ? parseInt(page, 10) : 1;
+    const parsedLimit = limit ? parseInt(limit, 10) : 20;
+
+    const { submissions, total } =
+      await this.submissionsService.findPendingAnalysis(parsedPage, parsedLimit);
+
+    return {
+      data: submissions.map((s) => ({
+        id: s._id,
+        userId: s.userId,
+        challengeId: s.challengeId,
+        code: s.code,
+        explanation: s.explanation,
+        explanationLanguage: s.explanationLanguage,
+        status: s.status,
+        createdAt: s.createdAt,
+      })),
+      meta: {
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit),
+      },
+    };
   }
 
   @Get('pending-reviews')
@@ -172,6 +204,27 @@ export class SubmissionsController {
       bonusCoinsFromReview: submission.bonusCoinsFromReview,
       createdAt: submission.createdAt,
       evaluatedAt: submission.evaluatedAt,
+    };
+  }
+
+  @Post(':id/analyze')
+  @Roles(Role.ADMIN)
+  async analyzeSubmission(@Param('id') id: string) {
+    const submission = await this.submissionsService.analyzeSubmission(id);
+
+    return {
+      message: 'Submission analyzed successfully',
+      submission: {
+        id: submission._id,
+        status: submission.status,
+        aiScore: submission.aiScore,
+        aiFeedback: submission.aiFeedback,
+        aiAnalysis: submission.aiAnalysis,
+        aiSuggestions: submission.aiSuggestions,
+        xpEarned: submission.xpEarned,
+        coinsEarned: submission.coinsEarned,
+        evaluatedAt: submission.evaluatedAt,
+      },
     };
   }
 

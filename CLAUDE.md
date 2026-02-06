@@ -34,7 +34,7 @@ NestJS v11 application with MongoDB (Mongoose) and JWT authentication.
 - **UsersModule** - User management, XP/coins/leveling logic
 - **ChallengesModule** - Weekly challenge CRUD, weekend-only access
 - **SubmissionsModule** - Code submission handling, triggers AI evaluation, manual review system
-- **AiModule** - OpenAI integration for Python code evaluation (no execution, static analysis)
+- **AiModule** - Ollama integration for Python code evaluation (no execution, static analysis)
 - **ShopModule** - Shop items and purchases with redemption codes
 - **AnnouncementsModule** - Admin announcements
 - **TransactionsModule** - Coin transaction history
@@ -57,13 +57,27 @@ NestJS v11 application with MongoDB (Mongoose) and JWT authentication.
 **Current User**:
 - Use `@CurrentUser()` decorator to get authenticated user in controllers
 
-### AI Code Evaluation
+### AI Code Evaluation (Manual via Ollama)
 
-Code evaluation happens in `src/ai/ai.service.ts`:
+Code evaluation happens in `src/ai/ai.service.ts` using locally-hosted Ollama:
+- **Submissions are NOT auto-evaluated** - they are stored with `PENDING` status
+- Admin triggers evaluation manually via `POST /submissions/:id/analyze`
+- Admin can view pending submissions via `GET /submissions/pending-analysis`
 - Validates code (max 10KB, blocks dangerous imports like `os`, `subprocess`, `sys`)
 - Sanitizes against prompt injection
-- Sends to OpenAI for static analysis (correctness, quality, efficiency, style)
-- Returns mock result if `OPENAI_API_KEY` not configured
+- Sends to Ollama for static analysis (correctness, quality, efficiency, style)
+
+**Setup Ollama:**
+```bash
+# Install Ollama (https://ollama.ai)
+curl -fsSL https://ollama.ai/install.sh | sh
+
+# Pull a model (default: llama3.2)
+ollama pull llama3.2
+
+# Start Ollama server (runs on port 11434)
+ollama serve
+```
 
 ### Explanation Review System
 
@@ -82,7 +96,7 @@ Coins on level up = 50 + (floor(level/10) * 25) + (100 if milestone level)
 ## Environment Variables
 
 Required: `JWT_SECRET`, `MONGODB_URI`
-Optional: `OPENAI_API_KEY` (enables real AI evaluation)
+Optional: `OLLAMA_URL` (defaults to `http://localhost:11434`), `OLLAMA_MODEL` (defaults to `llama3.2`)
 Development: `BYPASS_WEEKEND_CHECK=true` (allows weekday submissions)
 
 ## Database

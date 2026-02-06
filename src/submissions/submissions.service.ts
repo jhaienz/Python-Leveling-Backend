@@ -64,14 +64,66 @@ export class SubmissionsService {
 
     await submission.save();
 
-    // Process submission asynchronously
-    this.processSubmission(submission._id.toString(), challenge, user).catch(
-      (err) => {
-        console.error('Error processing submission:', err);
-      },
+    // Submission stored - admin will trigger AI evaluation manually
+    return submission;
+  }
+
+  async analyzeSubmission(submissionId: string): Promise<SubmissionDocument> {
+    const submission = await this.submissionModel
+      .findById(submissionId)
+      .populate('userId')
+      .exec();
+
+    if (!submission) {
+      throw new NotFoundException('Submission not found');
+    }
+
+    if (submission.status !== SubmissionStatus.PENDING) {
+      throw new BadRequestException(
+        'This submission has already been analyzed',
+      );
+    }
+
+    const challenge = await this.challengesService.findById(
+      submission.challengeId.toString(),
     );
 
-    return submission;
+    const user = submission.userId as unknown as UserDocument;
+
+    // Process the submission
+    await this.processSubmission(submissionId, challenge, user);
+
+    // Return updated submission
+    const updated = await this.submissionModel.findById(submissionId).exec();
+    if (!updated) {
+      throw new NotFoundException('Submission not found after processing');
+    }
+    return updated;
+  }
+
+  async findPendingAnalysis(
+    page = 1,
+    limit = 20,
+  ): Promise<{ submissions: SubmissionDocument[]; total: number }> {
+    const skip = (page - 1) * limit;
+
+    const query = {
+      status: SubmissionStatus.PENDING,
+    };
+
+    const [submissions, total] = await Promise.all([
+      this.submissionModel
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .populate('userId', 'name studentId')
+        .populate('challengeId', 'title difficulty')
+        .exec(),
+      this.submissionModel.countDocuments(query),
+    ]);
+
+    return { submissions, total };
   }
 
   private async processSubmission(
@@ -139,23 +191,13 @@ export class SubmissionsService {
 
   private calculateRewards(
     challenge: { baseXpReward: number; bonusCoins: number; difficulty: number },
-    aiScore: number,
+    _aiScore: number,
   ): { xp: number; coins: number } {
-    const baseXp = challenge.baseXpReward;
-    const baseCoins = challenge.bonusCoins;
-
-    // AI Score bonus (0-50% extra XP based on code quality)
-    const aiScoreMultiplier = aiScore / 100;
-    const aiBonus = Math.floor(baseXp * 0.5 * aiScoreMultiplier);
-
-    // Difficulty multiplier (1.0 to 1.8)
-    const difficultyMultiplier = 1 + (challenge.difficulty - 1) * 0.2;
-
-    // Calculate totals
-    const totalXp = Math.floor((baseXp + aiBonus) * difficultyMultiplier);
-    const totalCoins = Math.floor(baseCoins * difficultyMultiplier);
-
-    return { xp: totalXp, coins: totalCoins };
+    // Return exact values set on the challenge
+    return {
+      xp: challenge.baseXpReward,
+      coins: challenge.bonusCoins,
+    };
   }
 
   async findByUser(
