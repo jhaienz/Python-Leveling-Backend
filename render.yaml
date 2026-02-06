@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: challenge-system
+    runtime: node
+    buildCommand: pnpm install && pnpm build:render
+    startCommand: node dist/main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_OPTIONS
+        value: --max-old-space-size=512
