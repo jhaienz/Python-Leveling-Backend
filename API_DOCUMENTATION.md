@@ -343,10 +343,12 @@ GET /users/profile
 
 ---
 
-### Get Leaderboard
+### Get Leaderboard (All-Time)
 ```http
 GET /users/leaderboard?limit=10
 ```
+
+**Description:** Returns users ranked by total level and XP (all-time progress).
 
 **Response:**
 ```json
@@ -367,6 +369,49 @@ GET /users/leaderboard?limit=10
   }
 ]
 ```
+
+---
+
+### Get Weekly Leaderboard
+```http
+GET /users/leaderboard/weekly?limit=10
+```
+
+**Description:** Returns users ranked by XP earned during the current week (Saturday-Sunday). Only includes users who have earned XP this week.
+
+**Response:**
+```json
+{
+  "week": 6,
+  "year": 2026,
+  "data": [
+    {
+      "rank": 1,
+      "id": "...",
+      "name": "Weekly Champion",
+      "level": 15,
+      "tier": "BRONZE",
+      "weeklyXp": 350,
+      "submissionCount": 3
+    },
+    {
+      "rank": 2,
+      "id": "...",
+      "name": "Runner Up",
+      "level": 12,
+      "tier": "BRONZE",
+      "weeklyXp": 250,
+      "submissionCount": 2
+    }
+  ]
+}
+```
+
+**Response Fields:**
+- `week`: Current ISO week number
+- `year`: Current year
+- `data[].weeklyXp`: Total XP earned this week (from submissions + review bonuses)
+- `data[].submissionCount`: Number of submissions made this week
 
 ---
 

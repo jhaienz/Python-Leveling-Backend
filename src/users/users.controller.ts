@@ -41,6 +41,30 @@ export class UsersController {
     }));
   }
 
+  @Get('leaderboard/weekly')
+  async getWeeklyLeaderboard(@Query('limit') limit?: string) {
+    const parsedLimit = limit ? parseInt(limit, 10) : 10;
+    const weeklyStats = await this.usersService.getWeeklyLeaderboard(
+      Math.min(parsedLimit, 100),
+    );
+
+    const weekInfo = this.usersService.getCurrentWeekInfo();
+
+    return {
+      week: weekInfo.weekNumber,
+      year: weekInfo.year,
+      data: weeklyStats.map((stat, index) => ({
+        rank: index + 1,
+        id: stat.user._id,
+        name: stat.user.name,
+        level: stat.user.level,
+        tier: this.usersService.getProfileWithStats(stat.user).tier,
+        weeklyXp: stat.weeklyXp,
+        submissionCount: stat.submissionCount,
+      })),
+    };
+  }
+
   @Get()
   @Roles(Role.ADMIN)
   async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
