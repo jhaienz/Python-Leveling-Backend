@@ -4,16 +4,22 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import { Challenge, ChallengeDocument } from './schemas/challenge.schema';
 import { CreateChallengeDto, UpdateChallengeDto } from './dto';
 
 @Injectable()
 export class ChallengesService {
+  private timezone: string;
+
   constructor(
     @InjectModel(Challenge.name)
     private challengeModel: Model<ChallengeDocument>,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    this.timezone = this.configService.get<string>('TIMEZONE', 'Asia/Manila');
+  }
 
   async create(
     createChallengeDto: CreateChallengeDto,
@@ -61,14 +67,37 @@ export class ChallengesService {
   }
 
   async findCurrentWeekChallenges(): Promise<ChallengeDocument[]> {
-    const now = new Date();
-    const year = now.getFullYear();
-    const weekNumber = this.getWeekNumber(now);
+    const { year, weekNumber } = this.getCurrentWeekInfo();
 
     return this.challengeModel
       .find({ weekNumber, year, isActive: true })
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  getCurrentWeekInfo(): { year: number; weekNumber: number } {
+    const now = new Date();
+    // Get date components in the configured timezone
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: this.timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const parts = formatter.formatToParts(now);
+    const year = parseInt(
+      parts.find((p) => p.type === 'year')?.value || String(now.getFullYear()),
+    );
+    const month = parseInt(
+      parts.find((p) => p.type === 'month')?.value || '1',
+    );
+    const day = parseInt(parts.find((p) => p.type === 'day')?.value || '1');
+
+    // Create a date in local time for week calculation
+    const localDate = new Date(year, month - 1, day);
+    const weekNumber = this.getISOWeekNumber(localDate);
+
+    return { year, weekNumber };
   }
 
   async update(
@@ -132,10 +161,24 @@ export class ChallengesService {
     return challenge;
   }
 
-  private getWeekNumber(date: Date): number {
-    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear =
-      (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+  private getISOWeekNumber(date: Date): number {
+    // ISO 8601 week number calculation
+    // Week 1 is the week containing the first Thursday of the year
+    const target = new Date(date.valueOf());
+    // Set to nearest Thursday: current date + 4 - current day number (Monday=1, Sunday=7)
+    const dayNum = (date.getDay() + 6) % 7; // Convert Sunday=0 to Sunday=6, Monday=0
+    target.setDate(target.getDate() - dayNum + 3);
+    // Get first Thursday of year
+    const firstThursday = new Date(target.getFullYear(), 0, 1);
+    if (firstThursday.getDay() !== 4) {
+      firstThursday.setMonth(0, 1 + ((4 - firstThursday.getDay() + 7) % 7));
+    }
+    // Calculate week number
+    const weekNum =
+      1 +
+      Math.ceil(
+        (target.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000),
+      );
+    return weekNum;
   }
 }

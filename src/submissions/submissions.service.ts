@@ -36,17 +36,15 @@ export class SubmissionsService {
       throw new BadRequestException('This challenge is not currently active');
     }
 
-    // Check rate limiting (max 5 submissions per hour for this challenge)
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const recentSubmissions = await this.submissionModel.countDocuments({
+    // Check if user already has a submission for this challenge
+    const existingSubmission = await this.submissionModel.findOne({
       userId: user._id,
       challengeId: challenge._id,
-      createdAt: { $gte: oneHourAgo },
     });
 
-    if (recentSubmissions >= 5) {
+    if (existingSubmission) {
       throw new BadRequestException(
-        'You have reached the maximum of 5 submissions per hour for this challenge',
+        'You have already submitted a solution for this challenge. Only one submission per challenge is allowed.',
       );
     }
 
@@ -136,7 +134,7 @@ export class SubmissionsService {
 
     try {
       // Update status to evaluating
-      submission.status = SubmissionStatus.EVALUATING;
+      submission.status = SubmissionStatus.ONGOING;
       await submission.save();
 
       // Evaluate code with AI
@@ -154,7 +152,7 @@ export class SubmissionsService {
       submission.aiAnalysis = result.analysis;
       submission.aiSuggestions = result.suggestions;
       submission.status = result.passed
-        ? SubmissionStatus.PASSED
+        ? SubmissionStatus.COMPLETED
         : SubmissionStatus.FAILED;
       submission.evaluatedAt = new Date();
 
@@ -271,14 +269,14 @@ export class SubmissionsService {
 
     const stats = {
       total: submissions.length,
-      passed: submissions.filter((s) => s.status === SubmissionStatus.PASSED)
+      passed: submissions.filter((s) => s.status === SubmissionStatus.COMPLETED)
         .length,
       failed: submissions.filter((s) => s.status === SubmissionStatus.FAILED)
         .length,
       pending: submissions.filter(
         (s) =>
           s.status === SubmissionStatus.PENDING ||
-          s.status === SubmissionStatus.EVALUATING,
+          s.status === SubmissionStatus.ONGOING,
       ).length,
       totalXpEarned: submissions.reduce((sum, s) => sum + (s.xpEarned || 0), 0),
       totalCoinsEarned: submissions.reduce(
@@ -351,7 +349,7 @@ export class SubmissionsService {
 
     const query = {
       isReviewed: false,
-      status: { $in: [SubmissionStatus.PASSED, SubmissionStatus.FAILED] },
+      status: { $in: [SubmissionStatus.COMPLETED, SubmissionStatus.FAILED] },
     };
 
     const [submissions, total] = await Promise.all([

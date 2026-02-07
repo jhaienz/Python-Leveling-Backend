@@ -21,6 +21,22 @@ import { Role } from '../common/enums';
 export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}
 
+  @Get('week-info')
+  async getWeekInfo() {
+    const { year, weekNumber } = this.challengesService.getCurrentWeekInfo();
+    return {
+      year,
+      weekNumber,
+      message: `Current week is Week ${weekNumber} of ${year}`,
+    };
+  }
+
+  @Get('active')
+  @UseGuards(WeekendOnlyGuard)
+  async getActiveChallenge() {
+    return this.getCurrentChallenge();
+  }
+
   @Get('current')
   @UseGuards(WeekendOnlyGuard)
   async getCurrentChallenge() {

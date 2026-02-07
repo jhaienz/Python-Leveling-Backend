@@ -1,7 +1,7 @@
 export enum SubmissionStatus {
   PENDING = 'PENDING',
-  EVALUATING = 'EVALUATING',
-  PASSED = 'PASSED',
-  FAILED = 'FAILED',
-  ERROR = 'ERROR',
+  ONGOING = 'ONGOING', // Being evaluated by AI
+  COMPLETED = 'COMPLETED', // Passed evaluation
+  FAILED = 'FAILED', // Failed evaluation
+  ERROR = 'ERROR', // Error during evaluation
 }

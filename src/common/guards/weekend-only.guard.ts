@@ -19,10 +19,17 @@ export class WeekendOnlyGuard implements CanActivate {
       return true;
     }
 
-    const now = new Date();
-    const day = now.getDay(); // 0 = Sunday, 6 = Saturday
+    // Use configured timezone (defaults to Asia/Manila for Philippines)
+    const timezone = this.configService.get<string>(
+      'TIMEZONE',
+      'Asia/Manila',
+    );
 
-    const isWeekend = day === 0 || day === 6;
+    const now = new Date();
+    // Get the day in the configured timezone
+    const day = this.getDayInTimezone(now, timezone);
+
+    const isWeekend = day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
 
     if (!isWeekend) {
       throw new ForbiddenException(
@@ -31,6 +38,27 @@ export class WeekendOnlyGuard implements CanActivate {
     }
 
     return true;
+  }
+
+  private getDayInTimezone(date: Date, timezone: string): number {
+    // Get the day of week in the specified timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      weekday: 'short',
+    });
+    const dayName = formatter.format(date);
+
+    const dayMap: Record<string, number> = {
+      Sun: 0,
+      Mon: 1,
+      Tue: 2,
+      Wed: 3,
+      Thu: 4,
+      Fri: 5,
+      Sat: 6,
+    };
+
+    return dayMap[dayName] ?? date.getDay();
   }
 
   private isTruthy(value: string | boolean | undefined): boolean {
