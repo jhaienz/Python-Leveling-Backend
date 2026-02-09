@@ -67,12 +67,71 @@ export class ChallengesService {
   }
 
   async findCurrentWeekChallenges(): Promise<ChallengeDocument[]> {
+    // Honor the same weekend bypass flag used by WeekendOnlyGuard
+    if (!this.isBypassEnabled() && !this.isWithinChallengeWindow()) {
+      return [];
+    }
+
     const { year, weekNumber } = this.getCurrentWeekInfo();
 
     return this.challengeModel
       .find({ weekNumber, year, isActive: true })
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  /**
+   * Check if current time is between Saturday 00:00 and Sunday 23:59:59
+   */
+  private isWithinChallengeWindow(): boolean {
+    const now = new Date();
+
+    // Get current day and time in the configured timezone
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: this.timezone,
+      weekday: 'long',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false,
+    });
+
+    const parts = formatter.formatToParts(now);
+    const weekday = parts.find((p) => p.type === 'weekday')?.value;
+    const hour = parseInt(parts.find((p) => p.type === 'hour')?.value || '0');
+    const minute = parseInt(
+      parts.find((p) => p.type === 'minute')?.value || '0',
+    );
+    const second = parseInt(
+      parts.find((p) => p.type === 'second')?.value || '0',
+    );
+
+    // Check if it's Saturday or Sunday
+    if (weekday === 'Saturday') {
+      return true; // All day Saturday
+    }
+
+    if (weekday === 'Sunday') {
+      // Sunday until 23:59:59 (before midnight)
+      return true;
+    }
+
+    return false;
+  }
+
+  private isBypassEnabled(): boolean {
+    const bypassWeekend = this.configService.get<string | boolean>(
+      'BYPASS_WEEKEND_CHECK',
+    );
+    if (typeof bypassWeekend === 'boolean') {
+      return bypassWeekend;
+    }
+    if (typeof bypassWeekend !== 'string') {
+      return false;
+    }
+    return ['true', '1', 'yes', 'y', 'on'].includes(
+      bypassWeekend.trim().toLowerCase(),
+    );
   }
 
   getCurrentWeekInfo(): { year: number; weekNumber: number } {
@@ -88,9 +147,7 @@ export class ChallengesService {
     const year = parseInt(
       parts.find((p) => p.type === 'year')?.value || String(now.getFullYear()),
     );
-    const month = parseInt(
-      parts.find((p) => p.type === 'month')?.value || '1',
-    );
+    const month = parseInt(parts.find((p) => p.type === 'month')?.value || '1');
     const day = parseInt(parts.find((p) => p.type === 'day')?.value || '1');
 
     // Create a date in local time for week calculation
@@ -177,7 +234,8 @@ export class ChallengesService {
     const weekNum =
       1 +
       Math.ceil(
-        (target.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000),
+        (target.getTime() - firstThursday.getTime()) /
+          (7 * 24 * 60 * 60 * 1000),
       );
     return weekNum;
   }
