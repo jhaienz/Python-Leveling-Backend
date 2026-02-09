@@ -58,7 +58,7 @@ export class ChallengesController {
       testCases: challenge.testCases
         .map((tc) => ({
           input: tc.input,
-          // Only show first 2 test cases as examples
+          expectedOutput: tc.expectedOutput,
         }))
         .slice(0, 2),
     }));
