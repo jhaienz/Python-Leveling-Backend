@@ -1,35 +1,38 @@
-import { Controller, Post, Body, UseGuards, Get } from '@nestjs/common';
+import { Controller, Req, UseGuards, Get } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto } from './dto';
 import { Public, CurrentUser } from '../common/decorators';
-import { JwtAuthGuard } from '../common/guards';
-import { UserDocument } from '../users/schemas/user.schema';
-import { UsersService } from '../users/users.service';
+import { Request } from 'express';
+import { GoogleAuthGuard } from 'src/common/guards/Guards';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly usersService: UsersService,
-  ) {}
+  constructor() {}
 
-  @Public()
-  @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  @Get('google/login')
+  @UseGuards(GoogleAuthGuard)
+  handleLogin() {
+    return { message: 'Google authentication successful' };
   }
 
-  @Public()
-  @UseGuards(AuthGuard('local'))
-  @Post('login')
-  async login(@CurrentUser() user: UserDocument) {
-    return this.authService.login(user);
+  @Get('google/redirect')
+  @UseGuards(GoogleAuthGuard)
+  handleRedirect() {
+    return { message: 'Google redirect successful' };
   }
 
-  @UseGuards(JwtAuthGuard)
-  @Get('me')
-  getMe(@CurrentUser() user: UserDocument) {
-    return this.usersService.getProfileWithStats(user);
+  @Get('google/status')
+  @UseGuards(GoogleAuthGuard)
+  user(@Req() request: Request) {
+    console.log(request.user);
+    if (request.user) {
+      return { msg: 'Authenticated' };
+    } else {
+      return { msg: 'Not Authenticated' };
+    }
   }
+  // @UseGuards(JwtAuthGuard)
+  // @Get('me')
+  // getMe(@CurrentUser() user: UserDocument) {
+  //   return this.usersService.getProfileWithStats(user);
+  // }
 }

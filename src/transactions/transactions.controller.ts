@@ -1,11 +1,10 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
-import { JwtAuthGuard } from '../common/guards';
+
 import { CurrentUser } from '../common/decorators';
 import { UserDocument } from '../users/schemas/user.schema';
 
 @Controller('transactions')
-@UseGuards(JwtAuthGuard)
 export class TransactionsController {
   constructor(private readonly transactionsService: TransactionsService) {}
 

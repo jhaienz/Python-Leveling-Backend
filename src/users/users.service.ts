@@ -28,31 +28,18 @@ export class UsersService {
     this.timezone = this.configService.get<string>('TIMEZONE', 'Asia/Manila');
   }
 
-  async create(createUserDto: CreateUserDto): Promise<UserDocument> {
-    const existingUser = await this.userModel.findOne({
-      $or: [
-        { studentId: createUserDto.studentId },
-        ...(createUserDto.email ? [{ email: createUserDto.email }] : []),
-      ],
-    });
-
-    if (existingUser) {
-      if (existingUser.studentId === createUserDto.studentId) {
-        throw new ConflictException('Student ID already registered');
-      }
-      throw new ConflictException('Email already registered');
-    }
-
-    const passwordHash = await bcrypt.hash(createUserDto.password, 12);
-
+  async createUser(displayName: string, email: string) {
     const user = new this.userModel({
-      studentId: createUserDto.studentId,
-      name: createUserDto.name,
-      email: createUserDto.email,
-      passwordHash,
+      displayName: displayName,
+      email: email,
     });
 
     return user.save();
+  }
+
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    const user = await this.userModel.findOne({ email }).exec();
+    return user;
   }
 
   async findAll(
@@ -239,9 +226,7 @@ export class UsersService {
     const year = parseInt(
       parts.find((p) => p.type === 'year')?.value || String(now.getFullYear()),
     );
-    const month = parseInt(
-      parts.find((p) => p.type === 'month')?.value || '1',
-    );
+    const month = parseInt(parts.find((p) => p.type === 'month')?.value || '1');
     const day = parseInt(parts.find((p) => p.type === 'day')?.value || '1');
 
     // Create date in local timezone
@@ -276,9 +261,7 @@ export class UsersService {
     const year = parseInt(
       parts.find((p) => p.type === 'year')?.value || String(now.getFullYear()),
     );
-    const month = parseInt(
-      parts.find((p) => p.type === 'month')?.value || '1',
-    );
+    const month = parseInt(parts.find((p) => p.type === 'month')?.value || '1');
     const day = parseInt(parts.find((p) => p.type === 'day')?.value || '1');
 
     const localDate = new Date(year, month - 1, day);
@@ -298,7 +281,8 @@ export class UsersService {
     const weekNum =
       1 +
       Math.ceil(
-        (target.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000),
+        (target.getTime() - firstThursday.getTime()) /
+          (7 * 24 * 60 * 60 * 1000),
       );
     return weekNum;
   }
@@ -321,8 +305,7 @@ export class UsersService {
 
     return {
       id: user._id,
-      studentId: user.studentId,
-      name: user.name,
+      displayName: user.displayName,
       email: user.email,
       role: user.role,
       level: user.level,

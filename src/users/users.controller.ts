@@ -11,12 +11,10 @@ import {
 import { UsersService } from './users.service';
 import { UpdateUserDto, GrantCoinsDto } from './dto';
 import { CurrentUser, Roles } from '../common/decorators';
-import { JwtAuthGuard, RolesGuard } from '../common/guards';
 import { Role } from '../common/enums';
 import { UserDocument } from './schemas/user.schema';
 
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
@@ -35,7 +33,7 @@ export class UsersController {
     return users.map((user, index) => ({
       rank: index + 1,
       id: user._id,
-      name: user.name,
+      displayName: user.displayName,
       level: user.level,
       tier: this.usersService.getProfileWithStats(user).tier,
     }));
@@ -56,7 +54,7 @@ export class UsersController {
       data: weeklyStats.map((stat, index) => ({
         rank: index + 1,
         id: stat.user._id,
-        name: stat.user.name,
+        displayName: stat.user.displayName,
         level: stat.user.level,
         tier: this.usersService.getProfileWithStats(stat.user).tier,
         weeklyXp: stat.weeklyXp,

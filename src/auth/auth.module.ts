@@ -4,9 +4,9 @@ import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { JwtStrategy } from './strategies/jwt.strategy';
-import { LocalStrategy } from './strategies/local.strategy';
 import { UsersModule } from '../users/users.module';
+import { GoogleStrategy } from './utils/GoogleStrategy';
+import { SessionSerializer } from './utils/Serializer';
 
 @Module({
   imports: [
@@ -31,7 +31,15 @@ import { UsersModule } from '../users/users.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy],
+  providers: [
+    AuthService,
+    GoogleStrategy,
+    SessionSerializer,
+    {
+      provide: 'AUTH_SERVICE',
+      useExisting: AuthService,
+    },
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

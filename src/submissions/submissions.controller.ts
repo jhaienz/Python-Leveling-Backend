@@ -9,13 +9,13 @@ import {
 } from '@nestjs/common';
 import { SubmissionsService } from './submissions.service';
 import { CreateSubmissionDto, ReviewSubmissionDto } from './dto';
-import { JwtAuthGuard, RolesGuard, WeekendOnlyGuard } from '../common/guards';
+import { RolesGuard, WeekendOnlyGuard } from '../common/guards';
 import { CurrentUser, Roles } from '../common/decorators';
 import { Role } from '../common/enums';
 import { UserDocument } from '../users/schemas/user.schema';
 
 @Controller('submissions')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 export class SubmissionsController {
   constructor(private readonly submissionsService: SubmissionsService) {}
 
@@ -90,7 +90,10 @@ export class SubmissionsController {
     const parsedLimit = limit ? parseInt(limit, 10) : 20;
 
     const { submissions, total } =
-      await this.submissionsService.findPendingAnalysis(parsedPage, parsedLimit);
+      await this.submissionsService.findPendingAnalysis(
+        parsedPage,
+        parsedLimit,
+      );
 
     return {
       data: submissions.map((s) => ({

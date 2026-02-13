@@ -12,12 +12,12 @@ import {
 } from '@nestjs/common';
 import { ChallengesService } from './challenges.service';
 import { CreateChallengeDto, UpdateChallengeDto } from './dto';
-import { JwtAuthGuard, RolesGuard, WeekendOnlyGuard } from '../common/guards';
+import { RolesGuard, WeekendOnlyGuard } from '../common/guards';
 import { Roles } from '../common/decorators';
 import { Role } from '../common/enums';
 
 @Controller('challenges')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 export class ChallengesController {
   constructor(private readonly challengesService: ChallengesService) {}
 

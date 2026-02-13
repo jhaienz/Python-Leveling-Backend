@@ -11,13 +11,13 @@ import {
 } from '@nestjs/common';
 import { AnnouncementsService } from './announcements.service';
 import { CreateAnnouncementDto, UpdateAnnouncementDto } from './dto';
-import { JwtAuthGuard, RolesGuard } from '../common/guards';
+import { RolesGuard } from '../common/guards';
 import { CurrentUser, Roles } from '../common/decorators';
 import { Role } from '../common/enums';
 import { UserDocument } from '../users/schemas/user.schema';
 
 @Controller('announcements')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 export class AnnouncementsController {
   constructor(private readonly announcementsService: AnnouncementsService) {}
 

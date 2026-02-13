@@ -11,13 +11,13 @@ import {
 } from '@nestjs/common';
 import { ShopService } from './shop.service';
 import { CreateShopItemDto, UpdateShopItemDto, PurchaseDto } from './dto';
-import { JwtAuthGuard, RolesGuard } from '../common/guards';
+import { RolesGuard } from '../common/guards';
 import { CurrentUser, Roles } from '../common/decorators';
 import { Role } from '../common/enums';
 import { UserDocument } from '../users/schemas/user.schema';
 
 @Controller('shop')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(RolesGuard)
 export class ShopController {
   constructor(private readonly shopService: ShopService) {}
 

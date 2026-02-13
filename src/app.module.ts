@@ -13,8 +13,9 @@ import { AiModule } from './ai/ai.module';
 import { ShopModule } from './shop/shop.module';
 import { AnnouncementsModule } from './announcements/announcements.module';
 import { TransactionsModule } from './transactions/transactions.module';
-import { JwtAuthGuard } from './common/guards';
 import { LoggingInterceptor } from './common/interceptors';
+import { RolesGuard } from './common/guards';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { LoggingInterceptor } from './common/interceptors';
     ShopModule,
     AnnouncementsModule,
     TransactionsModule,
+    PassportModule.register({ session: true }),
   ],
   controllers: [AppController],
   providers: [
@@ -54,7 +56,7 @@ import { LoggingInterceptor } from './common/interceptors';
     },
     {
       provide: APP_GUARD,
-      useClass: JwtAuthGuard,
+      useClass: RolesGuard,
     },
     {
       provide: APP_INTERCEPTOR,
